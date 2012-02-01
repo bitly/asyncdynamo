@@ -111,7 +111,8 @@ class AsyncDynamoDB(AWSAuthConnection):
         request = HTTPRequest('https://%s' % self.host, 
             method='POST',
             headers=headers,
-            body=body)
+            body=body,
+            validate_cert=False)
         request.path = '/' # Important! set the path variable for signing by boto. '/' is the path for all dynamodb requests
         self._auth_handler.add_auth(request) # add signature to headers of the request
         self.http_client.fetch(request, functools.partial(self._finish_make_request,
