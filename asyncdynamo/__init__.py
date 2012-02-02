@@ -23,6 +23,10 @@ try:
     import tornado
 except ImportError:
     raise ImportError("tornado library not installed. Install tornado. https://github.com/facebook/tornado")
+try:
+    import boto
+except ImportError:
+    raise ImportError("boto library not installed. Install boto. https://github.com/boto/boto")
 
-version = "0.1"
-version_info = (0, 1)
+version = "0.2"
+version_info = (0, 2)

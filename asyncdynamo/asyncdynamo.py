@@ -57,10 +57,12 @@ class AsyncDynamoDB(AWSAuthConnection):
 
     def __init__(self, aws_access_key_id=None, aws_secret_access_key=None,
                  is_secure=True, port=None, proxy=None, proxy_port=None,
-                 host=None, debug=0, session_token=None):
+                 host=None, debug=0, session_token=None,
+                 authenticate_requests=True, validate_cert=True):
         if not host:
             host = self.DefaultHost
-
+        self.validate_cert = validate_cert
+        self.authenticate_requests = authenticate_requests 
         AWSAuthConnection.__init__(self, host,
                                    aws_access_key_id,
                                    aws_secret_access_key,
@@ -69,8 +71,9 @@ class AsyncDynamoDB(AWSAuthConnection):
         self.http_client = AsyncHTTPClient()
         self.pending_requests = deque()
         self.sts = AsyncAwsSts(aws_access_key_id, aws_secret_access_key)
-        if not session_token:
+        if authenticate_requests and not session_token:
             self.sts.get_session_token(self._update_session_token_cb) # init the session token
+        
         
     def _required_auth_capability(self): # copied from boto layer1, looks important
         return ['hmac-v3-http']
@@ -101,7 +104,7 @@ class AsyncDynamoDB(AWSAuthConnection):
         '''
         this_request = functools.partial(self.make_request, action=action,
             body=body, callback=callback,object_hook=object_hook)
-        if not self.provider.security_token: 
+        if self.authenticate_requests and not self.provider.security_token: 
             self.pending_requests.appendleft(this_request)
             return
         headers = {'X-Amz-Target' : '%s_%s.%s' % (self.ServiceName,
@@ -112,9 +115,10 @@ class AsyncDynamoDB(AWSAuthConnection):
             method='POST',
             headers=headers,
             body=body,
-            validate_cert=False)
+            validate_cert=self.validate_cert)
         request.path = '/' # Important! set the path variable for signing by boto. '/' is the path for all dynamodb requests
-        self._auth_handler.add_auth(request) # add signature to headers of the request
+        if self.authenticate_requests:
+            self._auth_handler.add_auth(request) # add signature to headers of the request
         self.http_client.fetch(request, functools.partial(self._finish_make_request,
             callback=callback, orig_request=this_request, token_used=self.provider.security_token, object_hook=object_hook)) # bam!
         
