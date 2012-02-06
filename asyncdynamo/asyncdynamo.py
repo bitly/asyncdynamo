@@ -35,25 +35,24 @@ from async_aws_sts import AsyncAwsSts
 
 
 class AsyncDynamoDB(AWSAuthConnection):
-
     DefaultHost = 'dynamodb.us-east-1.amazonaws.com'
     """The default DynamoDB API endpoint to connect to."""
-
+    
     ServiceName = 'DynamoDB'
     """The name of the Service"""
-
+    
     Version = '20111205'
     """DynamoDB API version."""
-
+    
     ThruputError = "ProvisionedThroughputExceededException"
     """The error response returned when provisioned throughput is exceeded"""
-
+    
     ExpiredSessionError = 'com.amazon.coral.service#ExpiredTokenException'
     """The error response returned when session token has expired"""
     
     UnrecognizedClientException = 'com.amazon.coral.service#UnrecognizedClientException'
     '''Another error response that is possible with a bad session token'''
-
+    
     def __init__(self, aws_access_key_id=None, aws_secret_access_key=None,
                  is_secure=True, port=None, proxy=None, proxy_port=None,
                  host=None, debug=0, session_token=None,
@@ -72,11 +71,10 @@ class AsyncDynamoDB(AWSAuthConnection):
         self.sts = AsyncAwsSts(aws_access_key_id, aws_secret_access_key)
         if authenticate_requests and not session_token:
             self.sts.get_session_token(self._update_session_token_cb) # init the session token
-        
-        
+    
     def _required_auth_capability(self): # copied from boto layer1, looks important
         return ['hmac-v3-http']
-        
+    
     def _update_session_token_cb(self, creds, provider='aws', callback=None):
         '''
         Callback to use with `async_aws_sts`. The 'provider' arg is a bit misleading,
@@ -95,7 +93,7 @@ class AsyncDynamoDB(AWSAuthConnection):
             request()
         if callable(callback):
             return callback()
-                           
+    
     def make_request(self, action, body='', callback=None, object_hook=None):
         '''
         Make an asynchronous HTTP request to DynamoDB. Callback should operate on
@@ -121,7 +119,7 @@ class AsyncDynamoDB(AWSAuthConnection):
             self._auth_handler.add_auth(request) # add signature to headers of the request
         self.http_client.fetch(request, functools.partial(self._finish_make_request,
             callback=callback, orig_request=this_request, token_used=self.provider.security_token, object_hook=object_hook)) # bam!
-        
+    
     def _finish_make_request(self, response, callback, orig_request, token_used, object_hook=None):
         '''
         Check for errors and decode the json response (in the tornado response body), then pass on to orig callback
@@ -149,9 +147,8 @@ class AsyncDynamoDB(AWSAuthConnection):
                 # because some errors are benign, include the response when an error is passed
                 return callback(json_response, error=DynamoDBResponseError(response.error.code, 
                     response.error.message, response.body))
-        return callback(json_response)
-        
-
+        return callback(json_response, error=None)
+    
     def get_item(self, table_name, key, callback, attributes_to_get=None,
             consistent_read=False, object_hook=None):
         '''
@@ -164,20 +161,13 @@ class AsyncDynamoDB(AWSAuthConnection):
         if consistent_read:
             data['ConsistentRead'] = True
         return self.make_request('GetItem', body=json.dumps(data),
-            callback=functools.partial(self._finish_get_item, callback=callback), object_hook=object_hook)
-            
-    def _finish_get_item(self, json_response, callback):
-        # if not json_response.has_key('Item'): This is what boto does, but I don't like this behavior. Thoughts?
-        #     raise dynamodb_exceptions.DynamoDBKeyNotFoundError(
-        #         "Key does not exist."
-        #     )
-        return callback(json_response)
-        
+            callback=functools.partial(callback), object_hook=object_hook)
+    
     def batch_get_item(self, request_items, callback):
         data = {'RequestItems' : request_items}
         json_input = json.dumps(data)
         self.make_request('BatchGetItem', json_input, callback)
-
+    
     def query(self, table_name, hash_key_value, callback, range_key_conditions=None,
               attributes_to_get=None, limit=None, consistent_read=False,
               scan_index_forward=True, exclusive_start_key=None,

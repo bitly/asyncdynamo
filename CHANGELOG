@@ -1,3 +1,6 @@
+Version 0.2.3 - 2012-02-06
+    * Always pass error argument
+
 Version 0.2.2 - 2012-02-06
     * Include response body to callbacks w/ errors
 
