@@ -1,3 +1,11 @@
-Version 0.2.1 2012-02-01
-  * Initial release
-  * Configurable auth
+Version 0.2.2 - 2012-02-06
+    * Include response body to callbacks w/ errors
+
+Version 0.2.1 - 2012-02-06
+    * Pass errors to callback instead of raising internally
+
+Version 0.2 - 2012-02-02
+    * Configurable auth
+
+Version 0.1 - 2012-02-01
+    * Initial release

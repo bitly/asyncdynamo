@@ -28,5 +28,5 @@ try:
 except ImportError:
     raise ImportError("boto library not installed. Install boto. https://github.com/boto/boto")
 
-version = "0.2.1"
-version_info = (0, 2, 1)
+version = "0.2.2"
+version_info = (0, 2, 2)

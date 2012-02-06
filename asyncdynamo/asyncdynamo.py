@@ -146,7 +146,9 @@ class AsyncDynamoDB(AWSAuthConnection):
                     # should just try again with the new one
                     return orig_request()
             else:
-                return callback(None, error=DynamoDBResponseError(response.error.code, response.error.message, response.body))
+                # because some errors are benign, include the response when an error is passed
+                return callback(json_response, error=DynamoDBResponseError(response.error.code, 
+                    response.error.message, response.body))
         return callback(json_response)
         
 
