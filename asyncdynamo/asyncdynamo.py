@@ -28,7 +28,6 @@ from collections import deque
 
 from boto.connection import AWSAuthConnection
 from boto.exception import DynamoDBResponseError
-# from boto.dynamodb import exceptions as dynamodb_exceptions
 from boto.auth import HmacAuthV3HTTPHandler
 from boto.provider import Provider
 
@@ -100,7 +99,8 @@ class AsyncDynamoDB(AWSAuthConnection):
     def make_request(self, action, body='', callback=None, object_hook=None):
         '''
         Make an asynchronous HTTP request to DynamoDB. Callback should operate on
-        the decoded json response (with object hook applied, of course)
+        the decoded json response (with object hook applied, of course). It should also
+        accept an error argument, that will be a boto.exception.DynamoDBResponseError 
         '''
         this_request = functools.partial(self.make_request, action=action,
             body=body, callback=callback,object_hook=object_hook)
@@ -146,7 +146,7 @@ class AsyncDynamoDB(AWSAuthConnection):
                     # should just try again with the new one
                     return orig_request()
             else:
-                raise DynamoDBResponseError(response.error.code, response.error.message, response.body)
+                return callback(None, error=DynamoDBResponseError(response.error.code, response.error.message, response.body))
         return callback(json_response)
         
 
