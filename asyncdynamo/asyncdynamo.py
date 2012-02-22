@@ -192,7 +192,7 @@ class AsyncDynamoDB(AWSAuthConnection):
         data = {'TableName': table_name,
                 'HashKeyValue': hash_key_value}
         if range_key_conditions:
-            data['RangeKeyConditions'] = range_key_conditions
+            data['RangeKeyCondition'] = range_key_conditions
         if attributes_to_get:
             data['AttributesToGet'] = attributes_to_get
         if limit:
