@@ -1,3 +1,7 @@
+Version 0.2.4 - 2012-02-23
+    * Fix RangeKeyAttribute bug in queries
+    * Add put_item method
+
 Version 0.2.3 - 2012-02-06
     * Always pass error argument
 
