@@ -167,6 +167,20 @@ class AsyncDynamoDB(AWSAuthConnection):
         data = {'RequestItems' : request_items}
         json_input = json.dumps(data)
         self.make_request('BatchGetItem', json_input, callback)
+        
+    def put_item(self, table_name, item, callback, expected=None, return_values=None, object_hook=None):
+        '''
+        Issues an async request to create a new item or replace an old one.
+        '''
+        data = {'TableName' : table_name,
+                'Item' : item}
+        if expected:
+            data['Expected'] = expected
+        if return_values:
+            data['ReturnValues'] = return_values
+        json_input = json.dumps(data)
+        return self.make_request('PutItem', json_input, callback=callback,
+                                 object_hook=object_hook)
     
     def query(self, table_name, hash_key_value, callback, range_key_conditions=None,
               attributes_to_get=None, limit=None, consistent_read=False,
@@ -178,7 +192,7 @@ class AsyncDynamoDB(AWSAuthConnection):
         data = {'TableName': table_name,
                 'HashKeyValue': hash_key_value}
         if range_key_conditions:
-            data['RangeKeyConditions'] = range_key_conditions
+            data['RangeKeyCondition'] = range_key_conditions
         if attributes_to_get:
             data['AttributesToGet'] = attributes_to_get
         if limit:
