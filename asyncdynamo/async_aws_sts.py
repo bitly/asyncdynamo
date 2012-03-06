@@ -1,6 +1,6 @@
 #!/bin/env python
 # 
-# Copyright 2010 bit.ly
+# Copyright 2012 bit.ly
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -26,9 +26,19 @@ import xml.sax
 import boto
 from boto.sts.connection import STSConnection
 from boto.sts.credentials import Credentials
+from boto.exception import BotoServerError
+
+class InvalidClientTokenIdError(BotoServerError):
+    '''
+    Error subclass to indicate that the client's token(s) is/are invalid
+    '''
+    pass
 
 class AsyncAwsSts(STSConnection):
     '''
+    Class that manages session tokens. Users of AsyncDynamoDB should not
+    need to worry about what goes on here.
+    
     Usage: Keep an instance of this class (though it should be cheap to
     re instantiate) and periodically call get_session_token to get a new
     Credentials object when, say, your session token expires
@@ -45,26 +55,35 @@ class AsyncAwsSts(STSConnection):
                                  proxy_user, proxy_pass, debug,
                                  https_connection_factory, region, path, converter)
         self.http_client = AsyncHTTPClient()
-        # self._auth_handler *should* be set correctly by superclass. 
     
     def get_session_token(self, callback):
         '''
         Gets a new Credentials object with a session token, using this
-        instance's aws keys. Callback should operate on the new Credentials obj
+        instance's aws keys. Callback should operate on the new Credentials obj,
+        or else a boto.exception.BotoServerError
         '''
         return self.get_object('GetSessionToken', {}, Credentials, verb='POST', callback=callback)
         
     def get_object(self, action, params, cls, path="/", parent=None, verb="GET", callback=None):
+        '''
+        Get an instance of `cls` using `action`
+        '''
         if not parent:
             parent = self
         self.make_request(action, params, path, verb, 
             functools.partial(self._finish_get_object, callback=callback, parent=parent, cls=cls))
         
-    def _finish_get_object(self, response_body, callback, cls=None, parent=None):
+    def _finish_get_object(self, response_body, callback, cls=None, parent=None, error=None):
         '''
-        Process the body returned by STS. Expect things like network errors to have
-        been handled by make_request
+        Process the body returned by STS. If an error is present, convert from a tornado error
+        to a boto error
         '''
+        if error:
+            if error.code == 403:
+                error_class = InvalidClientTokenIdError
+            else:
+                error_class = BotoServerError
+            return callback(None, error=error_class(error.code, error.message, response_body))
         obj = cls(parent)
         h = boto.handler.XmlHandler(obj, parent)
         xml.sax.parseString(response_body, h)
@@ -75,12 +94,12 @@ class AsyncAwsSts(STSConnection):
         Make an async request. This handles the logic of translating from boto params
         to a tornado request obj, issuing the request, and passing back the body.
         
-        The callback should operate on the body of the response
+        The callback should operate on the body of the response, and take an optional
+        error argument that will be a tornado error
         '''
         request = HTTPRequest('https://%s' % self.host, 
             method=verb)
         request.params = params
-        # request.path = '/' this one isn't necessary
         request.auth_path = '/' # need this for auth
         request.host = self.host # need this for auth
         if action:
@@ -92,9 +111,5 @@ class AsyncAwsSts(STSConnection):
         
     def _finish_make_request(self, response, callback):
         if response.error:
-            print '!!!!!!!!!!!!!!!!!!!!!!!'
-            print response.error
-            print response.body
-            print '!!!!!!!!!!!!!!!!!!!!!!!'
-            return
+            return callback(response.body, error=response.error)
         return callback(response.body)

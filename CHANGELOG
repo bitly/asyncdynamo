@@ -1,3 +1,6 @@
+Version 0.2.5 - 2012-03-05
+    * Improve error handling from STS
+
 Version 0.2.4 - 2012-02-23
     * Fix RangeKeyAttribute bug in queries
     * Add put_item method
