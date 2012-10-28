@@ -213,7 +213,7 @@ class AsyncDynamoDB(AWSAuthConnection):
             else:
                 # because some errors are benign, include the response when an error is passed
                 return callback(json_response, error=DynamoDBResponseError(response.error.code, 
-                    response.error.message, response.body))
+                    response.error.message, json_response))
         return callback(json_response, error=None)
     
     def get_item(self, table_name, key, callback, attributes_to_get=None,
