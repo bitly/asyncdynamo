@@ -202,8 +202,13 @@ class AsyncDynamoDB(AWSAuthConnection):
         Check for errors and decode the json response (in the tornado response body), then pass on to orig callback.
         This method also contains some of the logic to handle reacquiring session tokens.
         '''
-        json_response = json.loads(response.body, object_hook=object_hook)
-        if response.error:
+        try:
+            json_response = json.loads(response.body, object_hook=object_hook)
+        except TypeError:
+            json_response = None
+
+        if json_response and response.error:
+            # Normal error handling where we have a JSON response from AWS.
             if any((token_error in json_response.get('__type', []) \
                     for token_error in (self.ExpiredSessionError, self.UnrecognizedClientException))):
                 if self.provider.security_token == token_used:
@@ -214,8 +219,13 @@ class AsyncDynamoDB(AWSAuthConnection):
                 # because some errors are benign, include the response when an error is passed
                 return callback(json_response, error=DynamoDBResponseError(response.error.code, 
                     response.error.message, json_response))
-        return callback(json_response, error=None)
-    
+
+        if json_response is None:
+            # We didn't get any JSON back, but we also didn't receive an error response. This can't be right.
+            return callback(None, error=DynamoDBResponseError(response.code, response.body))
+        else:
+            return callback(json_response, error=None)
+
     def get_item(self, table_name, key, callback, attributes_to_get=None,
             consistent_read=False, object_hook=None):
         '''
