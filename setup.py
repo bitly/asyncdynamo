@@ -2,7 +2,7 @@ import os
 from distutils.core import setup
 
 # also update version in __init__.py
-version = '0.2.5'
+version = '0.2.6-alpha'
 
 setup(
     name="asyncdynamo",
