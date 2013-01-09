@@ -77,7 +77,7 @@ class AsyncDynamoDB(AWSAuthConnection):
     def __init__(self, aws_access_key_id=None, aws_secret_access_key=None,
                  is_secure=True, port=None, proxy=None, proxy_port=None,
                  host=None, debug=0, session_token=None,
-                 authenticate_requests=True, validate_cert=True, max_sts_attempts=3):
+                 authenticate_requests=True, validate_cert=True, max_sts_attempts=3, ioloop=None):
         if not host:
             host = self.DefaultHost
         self.validate_cert = validate_cert
@@ -87,9 +87,10 @@ class AsyncDynamoDB(AWSAuthConnection):
                                    aws_secret_access_key,
                                    is_secure, port, proxy, proxy_port,
                                    debug=debug, security_token=session_token)
-        self.http_client = AsyncHTTPClient()
+        self.ioloop = ioloop or IOLoop.instance()
+        self.http_client = AsyncHTTPClient(io_loop=self.ioloop)
         self.pending_requests = deque()
-        self.sts = AsyncAwsSts(aws_access_key_id, aws_secret_access_key)
+        self.sts = AsyncAwsSts(aws_access_key_id, aws_secret_access_key, ioloop=self.ioloop)
         assert (isinstance(max_sts_attempts, int) and max_sts_attempts >= 0)
         self.max_sts_attempts = max_sts_attempts
             
@@ -141,7 +142,7 @@ class AsyncDynamoDB(AWSAuthConnection):
                 else:
                     seconds_to_wait = (0.1*(2**attempts))
                     logging.warning("Got error[ %s ] getting session token, retrying in %.02f seconds" % (error, seconds_to_wait))
-                    IOLoop.instance().add_timeout(time.time() + seconds_to_wait,
+                    self.ioloop.add_timeout(time.time() + seconds_to_wait,
                         functools.partial(self._update_session_token, attempts=attempts+1, callback=callback, bypass_lock=True))
                     return
         else:

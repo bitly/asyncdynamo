@@ -48,13 +48,13 @@ class AsyncAwsSts(STSConnection):
                  is_secure=True, port=None, proxy=None, proxy_port=None,
                  proxy_user=None, proxy_pass=None, debug=0,
                  https_connection_factory=None, region=None, path='/',
-                 converter=None):
+                 converter=None, ioloop=None):
         STSConnection.__init__(self, aws_access_key_id,
                                  aws_secret_access_key,
                                  is_secure, port, proxy, proxy_port,
                                  proxy_user, proxy_pass, debug,
                                  https_connection_factory, region, path, converter)
-        self.http_client = AsyncHTTPClient()
+        self.http_client = AsyncHTTPClient(io_loop=ioloop)
     
     def get_session_token(self, callback):
         '''
