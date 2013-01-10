@@ -25,8 +25,9 @@ except ImportError:
     raise ImportError("tornado library not installed. Install tornado. https://github.com/facebook/tornado")
 try:
     import boto
+    assert tuple(map(int,boto.Version.split('.'))) >= (2,3,0), "Boto >= 2.3.0 required."
 except ImportError:
     raise ImportError("boto library not installed. Install boto. https://github.com/boto/boto")
 
-version = "0.2.6-alpha"
-version_info = (0, 2, 5)
+version = "0.2.6"
+version_info = (0, 2, 6)
