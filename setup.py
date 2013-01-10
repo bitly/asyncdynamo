@@ -20,5 +20,5 @@ setup(
     packages=['asyncdynamo'],
     install_requires=['tornado', 'boto>=2.3.0'],
     requires=['tornado'],
-    download_url="http://github.com/downloads/bitly/asyncdynamo/asyncdynamo-%s.tar.gz" % version,
+    download_url="https://github.com/bitly/asyncdynamo/archive/%s.tar.gz" % version,
 )

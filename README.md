@@ -3,9 +3,9 @@ Asyncdynamo
 
 Asynchronous Amazon DynamoDB library for Tornado
 
-Requires boto and python 2.7
+Requires boto>=2.3 and python 2.7
 
-Tested with Boto 2.2.1 and Tornado 1.2.1
+Tested with Tornado 1.2.1
 
 Installation
 ------------
