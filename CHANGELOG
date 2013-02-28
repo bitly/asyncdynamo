@@ -1,3 +1,6 @@
+Version 0.2.8 - 2013-02-28
+    * Fix compatibility issues wth boto>=2.7.0
+
 Version 0.2.6 - 2013-01-10
     * Allow user-defined IOLoop
     * Change error construction to comply with boto 2.3.0
